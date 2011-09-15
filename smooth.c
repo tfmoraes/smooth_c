@@ -3,20 +3,16 @@
 #include <string.h>
 #include <math.h>
 
-#define X 50
-#define Y 50
-#define Z 50
-
 typedef struct image {
 	unsigned char ***data;
 	int dx, dy, dz;
 } Image;
 
-Image build_ball(void){
-	int i, j, k;
-	int r = 20;
-	int c = 25;
+Image build_ball(int s, int r){
+	int i, j, k, X, Y, Z, c;
 	Image ball;
+	X = Y = Z = s;
+	c = s / 2;
 	ball.dx = X;
 	ball.dy = Y;
 	ball.dz = Z;
@@ -81,10 +77,24 @@ Image perim(Image image){
 	return out;
 }
 
-int main(void){
-	Image ball = build_ball();
+
+int main(int argc, const char *argv[])
+{
+	int r, size;
+	size = atoi(argv[1]);
+	r = atoi(argv[2]);
+	Image ball = build_ball(size, r);
 	Image A1 = perim(ball);
+	Image A2 = perim(A1);
+	Image A3 = perim(A2);
+	Image A4 = perim(A3);
 	print_slice(A1, 25);
+	printf("\n");
+	print_slice(A2, 25);
+	printf("\n");
+	print_slice(A3, 25);
+	printf("\n");
+	print_slice(A4, 25);
+	printf("\n");
 	return 0;
 }
-
