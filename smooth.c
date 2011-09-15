@@ -1,6 +1,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <stdarg.h>
 #include <math.h>
 
 typedef struct image {
@@ -77,6 +78,44 @@ Image perim(Image image){
 	return out;
 }
 
+Image sum_bands(int n, ...){
+	int x, y, z, i;
+	Image out, aux;
+	va_list bands;
+	
+	va_start(bands, n);
+	aux = va_arg(bands, Image);
+	
+	out.dx = aux.dx;
+	out.dy = aux.dy;
+	out.dz = aux.dz;
+	out.data = (unsigned char ***)malloc(aux.dx*aux.dy*aux.dz*sizeof(unsigned char));
+	
+	for(z=0; z < out.dz; z++){
+		out.data[z] = (unsigned char**)malloc(aux.dx*aux.dy*sizeof(unsigned char));
+		for(y=0; y < out.dy; y++){
+			out.data[z][y] = (unsigned char*)malloc(aux.dx*sizeof(unsigned char));
+			for(x=0; x < out.dx; x++){
+				out.data[z][y][x] = aux.data[z][y][x];
+			}
+		}
+	}
+
+	for(i=1; i < n; i++){
+		aux = va_arg(bands, Image);
+		for(z=0; z < out.dz; z++){
+			for(y=0; y < out.dy; y++){
+				for(x=0; x < out.dx; x++){
+					out.data[z][y][x] += aux.data[z][y][x];
+				}
+			}
+		}
+	}
+
+	va_end(bands);
+	return out;
+}
+
 
 int main(int argc, const char *argv[])
 {
@@ -88,13 +127,16 @@ int main(int argc, const char *argv[])
 	Image A2 = perim(A1);
 	Image A3 = perim(A2);
 	Image A4 = perim(A3);
-	print_slice(A1, 25);
-	printf("\n");
-	print_slice(A2, 25);
-	printf("\n");
-	print_slice(A3, 25);
-	printf("\n");
-	print_slice(A4, 25);
-	printf("\n");
+	Image Band = sum_bands(4, A1, A2, A3, A4);
+	/*print_slice(A1, 25);*/
+	/*printf("\n");*/
+	/*print_slice(A2, 25);*/
+	/*printf("\n");*/
+	/*print_slice(A3, 25);*/
+	/*printf("\n");*/
+	/*print_slice(A4, 25);*/
+	/*printf("\n");*/
+	/*print_slice(Band, 25);*/
+	/*printf("\n");*/
 	return 0;
 }
