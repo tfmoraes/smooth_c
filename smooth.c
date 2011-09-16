@@ -5,7 +5,7 @@
 #include <math.h>
 
 typedef struct image {
-	unsigned char ***data;
+	unsigned char *data;
 	int dx, dy, dz;
 } Image;
 
@@ -17,17 +17,15 @@ Image build_ball(int s, int r){
 	ball.dx = X;
 	ball.dy = Y;
 	ball.dz = Z;
-	ball.data = (unsigned char***)malloc(X*Y*Z*sizeof(unsigned char));
+	ball.data = (unsigned char*)malloc(X*Y*Z*sizeof(unsigned char));
 	for (k=0; k < Z; k++){
-		ball.data[k] = (unsigned char**)malloc(X*Y*sizeof(unsigned char));
 		for (j=0; j < Y; j++){
-			ball.data[k][j] = (unsigned char*)malloc(X*sizeof(unsigned char));
 			for (i=0; i < X; i++){
 				if ((i-c)*(i-c) + (j-c)*(j-c) + (k-c)*(k-c) <= r*r){
-					ball.data[k][j][i] = 1;
+					*(ball.data + k*ball.dy*ball.dx + j*ball.dx + i) = 1;
 				}
 				else{
-					ball.data[k][j][i] = 0;
+					*(ball.data + k*ball.dy*ball.dx + j*ball.dx + i) = 0;
 				}
 			}
 		}
@@ -40,7 +38,7 @@ void print_slice(Image image, int n){
 	for(y=0; y < image.dy; y++){
 		printf("\n");
 		for(x=0; x < image.dx; x++){
-			printf("%d", image.data[n][y][x]);
+			printf("%d", *(image.data + n*image.dy*image.dx + y*image.dx + x));
 		}
 	}
 }
@@ -55,18 +53,17 @@ Image perim(Image image){
 	out.dx = image.dx;
 	out.dy = image.dy;
 	out.dz = image.dz;
-	out.data = (unsigned char ***)malloc(dx*dy*dz*sizeof(unsigned char));
+	out.data = (unsigned char *)malloc(dx*dy*dz*sizeof(unsigned char));
 	for(z = 0; z < dz; z++){
-		out.data[z] = (unsigned char**)malloc(dx*dy*sizeof(unsigned char));
 		for(y = 0; y < dy; y++){
-			out.data[z][y] = (unsigned char*)malloc(dx*sizeof(unsigned char));
 			for(x = 0; x < dx; x++){
-				out.data[z][y][x] = 0;
+				*(out.data + z*out.dy*dx + y*out.dx + x)= 0;
 				for(z_=z-1; z_ <= z+1; z_++){
 					for(y_=y-1; y_ <= y+1; y_++){
 						for(x_=x-1; x_ <= x+1; x_++){
-							if ((x_ >= 0) && (x_ < dx) && (y_ >= 0) && (y_ < dy) && (z_ >= 0) && (z_ < dz) && (image.data[z][y][x] != image.data[z_][y_][x_])){
-								out.data[z][y][x] = 1;
+							if ((x_ >= 0) && (x_ < dx) && (y_ >= 0) && (y_ < dy) && (z_ >= 0) && (z_ < dz) \
+									&& (*(image.data + z*dy*dx + y*dx + x) != *(image.data + z_*dy*dx + y_*dx + x_))){
+								*(out.data + z*out.dy*dx + y*out.dx + x)= 1;
 							}
 						}
 					}
@@ -89,14 +86,12 @@ Image sum_bands(int n, ...){
 	out.dx = aux.dx;
 	out.dy = aux.dy;
 	out.dz = aux.dz;
-	out.data = (unsigned char ***)malloc(aux.dx*aux.dy*aux.dz*sizeof(unsigned char));
+	out.data = (unsigned char *)malloc(aux.dx*aux.dy*aux.dz*sizeof(unsigned char));
 	
 	for(z=0; z < out.dz; z++){
-		out.data[z] = (unsigned char**)malloc(aux.dx*aux.dy*sizeof(unsigned char));
 		for(y=0; y < out.dy; y++){
-			out.data[z][y] = (unsigned char*)malloc(aux.dx*sizeof(unsigned char));
 			for(x=0; x < out.dx; x++){
-				out.data[z][y][x] = aux.data[z][y][x];
+				*(out.data + z*out.dy*out.dx + y*out.dx + x) = *(aux.data + z*aux.dy*aux.dx + y*aux.dx + x);
 			}
 		}
 	}
@@ -106,7 +101,7 @@ Image sum_bands(int n, ...){
 		for(z=0; z < out.dz; z++){
 			for(y=0; y < out.dy; y++){
 				for(x=0; x < out.dx; x++){
-					out.data[z][y][x] += aux.data[z][y][x];
+					*(out.data + z*out.dy*out.dx + y*out.dx + x) += *(aux.data + z*aux.dy*aux.dx + y*aux.dx + x);
 				}
 			}
 		}
@@ -128,6 +123,11 @@ int main(int argc, const char *argv[])
 	Image A3 = perim(A2);
 	Image A4 = perim(A3);
 	Image Band = sum_bands(4, A1, A2, A3, A4);
+	free(A1.data);
+	free(A2.data);
+	free(A3.data);
+	free(A4.data);
+	/*print_slice(ball, size/2);*/
 	/*print_slice(A1, 25);*/
 	/*printf("\n");*/
 	/*print_slice(A2, 25);*/
