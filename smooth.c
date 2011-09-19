@@ -113,14 +113,14 @@ Image sum_bands(int n, ...){
 	return out;
 }
 
-void save_image(Image image){
+void save_image(Image image, char* filename){
 	int RANK=3;
 	hid_t       file_id;
 	hsize_t     dims[3]={image.dz, image.dy, image.dx};
 	herr_t      status;
 
 	/* create a HDF5 file */
-	file_id = H5Fcreate ("ex_lite1.h5", H5F_ACC_TRUNC, H5P_DEFAULT, H5P_DEFAULT);
+	file_id = H5Fcreate (filename, H5F_ACC_TRUNC, H5P_DEFAULT, H5P_DEFAULT);
 
 	/* create and write an integer type dataset named "dset" */
 	status = H5LTmake_dataset(file_id,"/dset",RANK,dims,H5T_NATIVE_UCHAR, image.data);
@@ -132,6 +132,7 @@ void save_image(Image image){
 int main(int argc, const char *argv[])
 {
 	int r, size;
+	char* filename = argv[3];
 	size = atoi(argv[1]);
 	r = atoi(argv[2]);
 	Image ball = build_ball(size, r);
@@ -144,17 +145,17 @@ int main(int argc, const char *argv[])
 	free(A2.data);
 	free(A3.data);
 	free(A4.data);
-	print_slice(ball, size/2);
-	print_slice(A1, 25);
-	printf("\n");
-	print_slice(A2, 25);
-	printf("\n");
-	print_slice(A3, 25);
-	printf("\n");
-	print_slice(A4, 25);
-	printf("\n");
-	print_slice(Band, 25);
-	printf("\n");
-	save_image(ball);
+	/*print_slice(ball, size/2);*/
+	/*print_slice(A1, 25);*/
+	/*printf("\n");*/
+	/*print_slice(A2, 25);*/
+	/*printf("\n");*/
+	/*print_slice(A3, 25);*/
+	/*printf("\n");*/
+	/*print_slice(A4, 25);*/
+	/*printf("\n");*/
+	/*print_slice(Band, 25);*/
+	/*printf("\n");*/
+	save_image(ball, filename);
 	return 0;
 }
