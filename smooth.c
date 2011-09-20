@@ -6,6 +6,7 @@
 #include "hdf5.h"
 #include "hdf5_hl.h"
 
+#define E 0.001
 #define G(I, z, y, x) *(I.data + (z)*I.dy*I.dx + (y)*I.dx + x)
 
 typedef struct image {
@@ -220,19 +221,21 @@ dImage smooth(Image image, int n){
 						} else {
 							G(out, z, y, x) = v < 0.5 ? v: 0.5;
 						}
-						diff += (G(out, z, y, x) - G(out, z, y, x));
+						diff += (G(out, z, y, x) - G(aux, z, y, x))*(G(out, z, y, x) - G(aux, z, y, x));
 					}
 				}
 			}
 		}
 		cn = sqrt((1.0/S) * diff);
-		printf("CN: %.28f\n", cn);
+		printf("CN: %.28f - diff: %.28f\n", cn, diff);
+		if (cn <= E)
+			break;
 	}
-
+	return out;
 }
 
 
-void save_image(Image image, char* filename){
+void save_image(dImage image, char* filename){
 	int RANK=3;
 	hid_t       file_id;
 	hsize_t     dims[3]={image.dz, image.dy, image.dx};
@@ -242,7 +245,7 @@ void save_image(Image image, char* filename){
 	file_id = H5Fcreate (filename, H5F_ACC_TRUNC, H5P_DEFAULT, H5P_DEFAULT);
 
 	/* create and write an integer type dataset named "dset" */
-	status = H5LTmake_dataset(file_id,"/dset",RANK,dims,H5T_NATIVE_UCHAR, image.data);
+	status = H5LTmake_dataset(file_id,"/dset",RANK,dims,H5T_NATIVE_DOUBLE, image.data);
 
 	/* close file */
 	status = H5Fclose (file_id);
@@ -255,7 +258,7 @@ int main(int argc, const char *argv[])
 	size = atoi(argv[1]);
 	r = atoi(argv[2]);
 	Image ball = build_ball(size, r);
-	dImage smoothed = smooth(ball, 5);
+	dImage smoothed = smooth(ball, 50);
 	/*print_slice(ball, size/2);*/
 	/*print_slice(A1, 25);*/
 	/*printf("\n");*/
@@ -267,6 +270,6 @@ int main(int argc, const char *argv[])
 	/*printf("\n");*/
 	/*print_slice(Band, 25);*/
 	/*printf("\n");*/
-	/*save_image(Band, filename);*/
+	save_image(smoothed, filename);
 	return 0;
 }
