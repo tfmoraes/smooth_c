@@ -6,7 +6,7 @@
 #include "hdf5.h"
 #include "hdf5_hl.h"
 
-#define G(I, z, y, x) *(I.data + z*I.dy*I.dx + y*I.dx + x)
+#define G(I, z, y, x) *(I.data + (z)*I.dy*I.dx + (y)*I.dx + x)
 
 typedef struct image {
 	unsigned char *data;
@@ -187,7 +187,13 @@ dImage smooth(Image image, int n){
 	free(A4.data);
 
 	out.data = (double *) malloc(image.dz*image.dy*image.dx*sizeof(double));
+	out.dz = image.dz;
+	out.dy = image.dy;
+	out.dx = image.dx;
 	aux.data = (double *) malloc(image.dz*image.dy*image.dx*sizeof(double));
+	aux.dz = image.dz;
+	aux.dy = image.dy;
+	aux.dx = image.dx;
 
 	S = 0;
 	for(z=0; z < image.dz; z++){
@@ -203,7 +209,7 @@ dImage smooth(Image image, int n){
 	for(i=0; i < n; i++){
 		replicate(out, aux);
 		diff = 0.0;
-		for(z=0; z < image.dz; z++){
+		for(z=0; z < out.dz; z++){
 			for(y=0; y < out.dy; y++){
 				for(x=0; x < out.dx; x++){
 					if (G(Band, z, y, x)){
@@ -219,8 +225,8 @@ dImage smooth(Image image, int n){
 				}
 			}
 		}
-		cn = sqrt(1.0/S * diff);
-		printf("%.8f", cn);
+		cn = sqrt((1.0/S) * diff);
+		printf("CN: %.28f\n", cn);
 	}
 
 }
