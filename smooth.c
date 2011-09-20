@@ -6,10 +6,17 @@
 #include "hdf5.h"
 #include "hdf5_hl.h"
 
+#define G(I, z, y, x) *(I.data + z*I.dy*I.dx + y*I.dx + x)
+
 typedef struct image {
 	unsigned char *data;
 	int dx, dy, dz;
 } Image;
+
+typedef struct d_image {
+	double *data;
+	int dx, dy, dz;
+} dImage;
 
 Image build_ball(int s, int r){
 	int i, j, k, X, Y, Z, c;
@@ -24,10 +31,10 @@ Image build_ball(int s, int r){
 		for (j=0; j < Y; j++){
 			for (i=0; i < X; i++){
 				if ((i-c)*(i-c) + (j-c)*(j-c) + (k-c)*(k-c) <= r*r){
-					*(ball.data + k*ball.dy*ball.dx + j*ball.dx + i) = 1;
+					G(ball, k, j, i) = 1;
 				}
 				else{
-					*(ball.data + k*ball.dy*ball.dx + j*ball.dx + i) = 0;
+					G(ball, k, j, i) = 0;
 				}
 			}
 		}
@@ -40,7 +47,7 @@ void print_slice(Image image, int n){
 	for(y=0; y < image.dy; y++){
 		printf("\n");
 		for(x=0; x < image.dx; x++){
-			printf("%d", *(image.data + n*image.dy*image.dx + y*image.dx + x));
+			printf("%d", G(image, n, y, x));
 		}
 	}
 }
@@ -64,8 +71,8 @@ Image perim(Image image){
 					for(y_=y-1; y_ <= y+1; y_++){
 						for(x_=x-1; x_ <= x+1; x_++){
 							if ((x_ >= 0) && (x_ < dx) && (y_ >= 0) && (y_ < dy) && (z_ >= 0) && (z_ < dz) \
-									&& (*(image.data + z*dy*dx + y*dx + x) != *(image.data + z_*dy*dx + y_*dx + x_))){
-								*(out.data + z*out.dy*dx + y*out.dx + x)= 1;
+									&& (G(image, z, y, x) != G(image, z_, y_, x_))){
+								G(out, z, y, x) = 1;
 							}
 						}
 					}
@@ -93,7 +100,7 @@ Image sum_bands(int n, ...){
 	for(z=0; z < out.dz; z++){
 		for(y=0; y < out.dy; y++){
 			for(x=0; x < out.dx; x++){
-				*(out.data + z*out.dy*out.dx + y*out.dx + x) = *(aux.data + z*aux.dy*aux.dx + y*aux.dx + x);
+				G(out, z, y, x) = G(aux, z, y, x);
 			}
 		}
 	}
@@ -103,7 +110,7 @@ Image sum_bands(int n, ...){
 		for(z=0; z < out.dz; z++){
 			for(y=0; y < out.dy; y++){
 				for(x=0; x < out.dx; x++){
-					*(out.data + z*out.dy*out.dx + y*out.dx + x) += *(aux.data + z*aux.dy*aux.dx + y*aux.dx + x);
+					G(out, z, y, x) = G(aux, z, y, x);
 				}
 			}
 		}
@@ -121,28 +128,28 @@ double calculate_H(Image I, int z, int y, int x){
     k = 1;
     l = 1;
 
-    fx = (*(I.data + z*I.dy*I.dx + y*I.dx*I.dx + x + h) - *(I.data + z*I.dy*I.dx + y*I.dx + x - h)) / (2.0*h);
+    fx = (G(I, z, y, x + h) - G(I, z, y, x - h)) / (2.0*h);
 
-    fy = (*(I.data + z*I.dy*I.dx + (y+k)*I.dx + x) - *(I.data + z*I.dy*I.dx + (y-k)*I.dx + x)) / (2.0*k);
+    fy = (G(I, z, y + k, x) - G(I, z, y - k, x)) / (2.0*k);
 
-    fz = (*(I.data + (z+l)*I.dy*I.dx +  y*I.dx + x) - *(I.data + (z-l)*I.dy*I.dx + y*I.dx + x)) / (2.0*l);
+    fz = (G(I, z + l, y, x) - G(I, z - l, y, x)) / (2.0*l);
 
-    fxx = (*(I.data + z*I.dy*I.dx + y*I.dx+ x + h) - 2**(I.data + z*I.dy*I.dx + y*I.dx + x) + *(I.data + z*I.dy*I.dx+ y*I.dx + x - h)) / (h*h);
-             
-    fyy = (*(I.data + z*I.dy*I.dx + (y+k)*I.dx + x) - 2**(I.data + z*I.dy*I.dx + y*I.dx + x) + *(I.data + z*I.dy*I.dx + (y-k)*I.dx + x)) / (k*k);
-            
-    fzz = (*(I.data + (z+l)*I.dy*I.dx + y*I.dx+ x) - 2**(I.data + z*I.dy*I.dx+ y*I.dx+ x) + *(I.data + (z-l)*I.dy*I.dx + y*I.dx+ x)) / (l*l);
-            
-    fxy = (*(I.data + z*I.dy*I.dx + (y+k)*I.dx + x + h) - *(I.data + z*I.dy*I.dx + (y-k)*I.dx + x + h) \
-            - *(I.data + z*I.dy*I.dx + (y+k)*I.dx + x - h) + *(I.data + z*I.dy*I.dx + (y-k)*I.dx + x - h)) \
+    fxx = (G(I, z, y, x + h) - 2*G(I, z, y, x) + G(I, z, y, x - h)) / (h*h);
+
+    fyy = (G(I, z, y + k, x) - 2*G(I, z, y, x) + G(I, z, y - k, x)) / (k*k);
+
+    fzz = (G(I, z + l, y, x) - 2*G(I, z, y, x) + G(I, z - l, y, x)) / (l*l);
+
+    fxy = (G(I, z, y + k, x + h) - G(I, z, y - k, x + h) \
+            - G(I, z, y + k, x - h) + G(I, z, y - k, x - h)) \
             / (4.0*h*k);
 
-    fxz = (*(I.data + (z+l)*I.dy*I.dx +  y*I.dx+ x + h) - *(I.data + (z+l)*I.dy*I.dx + y*I.dx+ x - h) \
-            - *(I.data + (z-l)*I.dy*I.dx + y*I.dx+ x + h) + *(I.data + (z-l)*I.dy*I.dx + y*I.dx+ x - h)) \
+    fxz = (G(I, z + l, y, x + h) - G(I, z + l, y, x - h) \
+            - G(I, z - l, y, x + h) + G(I, z - l, y, x - h)) \
             / (4.0*h*l);
 
-    fyz = (*(I.data + (z+l)*I.dy*I.dx + (y+k)*I.dx +  x) - *(I.data + (z+l)*I.dy*I.dx + (y-k)*I.dx + x) \
-			- *(I.data + (z-l)*I.dy*I.dx + (y+k)*I.dx + x) + *(I.data + (z-l)*I.dy*I.dx + (y-k)*I.dx + x)) \
+    fyz = (G(I, z + l, y + k, x) - G(I, z + l, y - k, x) \
+            - G(I, z - l, y + k, x) + G(I, z - l, y - k, x)) \
             / (4.0*k*l);
 
     if (fx*fx + fy*fy + fz*fz > 0)
@@ -155,6 +162,7 @@ double calculate_H(Image I, int z, int y, int x){
 
     return H;
 }
+
 
 void save_image(Image image, char* filename){
 	int RANK=3;
@@ -199,6 +207,6 @@ int main(int argc, const char *argv[])
 	/*printf("\n");*/
 	/*print_slice(Band, 25);*/
 	/*printf("\n");*/
-	save_image(ball, filename);
+	save_image(Band, filename);
 	return 0;
 }
