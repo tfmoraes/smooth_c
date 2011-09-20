@@ -113,6 +113,49 @@ Image sum_bands(int n, ...){
 	return out;
 }
 
+double calculate_H(Image I, int z, int y, int x){
+    double fx, fy, fz, fxx, fyy, fzz, fxy, fxz, fyz, H;
+    int h, k, l;
+
+    h = 1;
+    k = 1;
+    l = 1;
+
+    fx = (*(I.data + z*I.dy*I.dx + y*I.dx*I.dx + x + h) - *(I.data + z*I.dy*I.dx + y*I.dx + x - h)) / (2.0*h);
+
+    fy = (*(I.data + z*I.dy*I.dx + (y+k)*I.dx + x) - *(I.data + z*I.dy*I.dx + (y-k)*I.dx + x)) / (2.0*k);
+
+    fz = (*(I.data + (z+l)*I.dy*I.dx +  y*I.dx + x) - *(I.data + (z-l)*I.dy*I.dx + y*I.dx + x)) / (2.0*l);
+
+    fxx = (*(I.data + z*I.dy*I.dx + y*I.dx+ x + h) - 2**(I.data + z*I.dy*I.dx + y*I.dx + x) + *(I.data + z*I.dy*I.dx+ y*I.dx + x - h)) / (h*h);
+             
+    fyy = (*(I.data + z*I.dy*I.dx + (y+k)*I.dx + x) - 2**(I.data + z*I.dy*I.dx + y*I.dx + x) + *(I.data + z*I.dy*I.dx + (y-k)*I.dx + x)) / (k*k);
+            
+    fzz = (*(I.data + (z+l)*I.dy*I.dx + y*I.dx+ x) - 2**(I.data + z*I.dy*I.dx+ y*I.dx+ x) + *(I.data + (z-l)*I.dy*I.dx + y*I.dx+ x)) / (l*l);
+            
+    fxy = (*(I.data + z*I.dy*I.dx + (y+k)*I.dx + x + h) - *(I.data + z*I.dy*I.dx + (y-k)*I.dx + x + h) \
+            - *(I.data + z*I.dy*I.dx + (y+k)*I.dx + x - h) + *(I.data + z*I.dy*I.dx + (y-k)*I.dx + x - h)) \
+            / (4.0*h*k);
+
+    fxz = (*(I.data + (z+l)*I.dy*I.dx +  y*I.dx+ x + h) - *(I.data + (z+l)*I.dy*I.dx + y*I.dx+ x - h) \
+            - *(I.data + (z-l)*I.dy*I.dx + y*I.dx+ x + h) + *(I.data + (z-l)*I.dy*I.dx + y*I.dx+ x - h)) \
+            / (4.0*h*l);
+
+    fyz = (*(I.data + (z+l)*I.dy*I.dx + (y+k)*I.dx +  x) - *(I.data + (z+l)*I.dy*I.dx + (y-k)*I.dx + x) \
+			- *(I.data + (z-l)*I.dy*I.dx + (y+k)*I.dx + x) + *(I.data + (z-l)*I.dy*I.dx + (y-k)*I.dx + x)) \
+            / (4.0*k*l);
+
+    if (fx*fx + fy*fy + fz*fz > 0)
+        H = ((fy*fy + fz*fz)*fxx + (fx*fx + fz*fz)*fyy \
+                + (fx*fx + fy*fy)*fzz - 2*(fx*fy*fxy \
+                + fx*fz*fxz + fy*fz*fyz)) \
+                / (fx*fx + fy*fy + fz*fz);
+	else
+        H = 0.0;
+
+    return H;
+}
+
 void save_image(Image image, char* filename){
 	int RANK=3;
 	hid_t       file_id;
