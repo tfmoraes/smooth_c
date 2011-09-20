@@ -120,7 +120,7 @@ Image sum_bands(int n, ...){
 	return out;
 }
 
-double calculate_H(Image I, int z, int y, int x){
+double calculate_H(dImage I, int z, int y, int x){
     double fx, fy, fz, fxx, fyy, fzz, fxy, fxz, fyz, H;
     int h, k, l;
 
@@ -163,6 +163,68 @@ double calculate_H(Image I, int z, int y, int x){
     return H;
 }
 
+void replicate(dImage source, dImage dest){
+	int x, y, z;
+	for(z=0; z < source.dz; z++)
+		for(y=0; y < source.dy; y++)
+			for(x=0; x < source.dx; x++)
+				G(dest, z, y, x) = G(source, z, y, x);
+}
+
+dImage smooth(Image image, int n){
+	int i, x, y, z, S;
+	double H, diff=0, dt=1/6.0, v, cn;
+	dImage out, aux;
+
+	Image A1 = perim(image);
+	Image A2 = perim(A1);
+	Image A3 = perim(A2);
+	Image A4 = perim(A3);
+	Image Band = sum_bands(4, A1, A2, A3, A4);
+	free(A1.data);
+	free(A2.data);
+	free(A3.data);
+	free(A4.data);
+
+	out.data = (double *) malloc(image.dz*image.dy*image.dx*sizeof(double));
+	aux.data = (double *) malloc(image.dz*image.dy*image.dx*sizeof(double));
+
+	S = 0;
+	for(z=0; z < image.dz; z++){
+		for(y=0; y < out.dy; y++){
+			for(x=0; x < out.dx; x++){
+				G(out, z, y, x) = G(image, z, y, x);
+				if (G(Band, z, y, x))
+					S += 1;
+			}
+		}
+	}
+
+	for(i=0; i < n; i++){
+		replicate(out, aux);
+		diff = 0.0;
+		for(z=0; z < image.dz; z++){
+			for(y=0; y < out.dy; y++){
+				for(x=0; x < out.dx; x++){
+					if (G(Band, z, y, x)){
+						H = calculate_H(aux, z, y, x);
+						v = G(aux, z, y, x) + dt*H;
+						if(G(image, z, y, x)){
+							G(out, z, y, x) = v > 0.5 ? v: 0.5;
+						} else {
+							G(out, z, y, x) = v < 0.5 ? v: 0.5;
+						}
+						diff += (G(out, z, y, x) - G(out, z, y, x));
+					}
+				}
+			}
+		}
+		cn = sqrt(1.0/S * diff);
+		printf("%.8f", cn);
+	}
+
+}
+
 
 void save_image(Image image, char* filename){
 	int RANK=3;
@@ -187,15 +249,7 @@ int main(int argc, const char *argv[])
 	size = atoi(argv[1]);
 	r = atoi(argv[2]);
 	Image ball = build_ball(size, r);
-	Image A1 = perim(ball);
-	Image A2 = perim(A1);
-	Image A3 = perim(A2);
-	Image A4 = perim(A3);
-	Image Band = sum_bands(4, A1, A2, A3, A4);
-	free(A1.data);
-	free(A2.data);
-	free(A3.data);
-	free(A4.data);
+	dImage smoothed = smooth(ball, 5);
 	/*print_slice(ball, size/2);*/
 	/*print_slice(A1, 25);*/
 	/*printf("\n");*/
@@ -207,6 +261,6 @@ int main(int argc, const char *argv[])
 	/*printf("\n");*/
 	/*print_slice(Band, 25);*/
 	/*printf("\n");*/
-	save_image(Band, filename);
+	/*save_image(Band, filename);*/
 	return 0;
 }
