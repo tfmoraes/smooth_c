@@ -111,7 +111,7 @@ Image sum_bands(int n, ...){
 		for(z=0; z < out.dz; z++){
 			for(y=0; y < out.dy; y++){
 				for(x=0; x < out.dx; x++){
-					G(out, z, y, x) = G(aux, z, y, x);
+					G(out, z, y, x) += G(aux, z, y, x);
 				}
 			}
 		}
@@ -160,6 +160,7 @@ double calculate_H(dImage I, int z, int y, int x){
                 / (fx*fx + fy*fy + fz*fz);
 	else
         H = 0.0;
+
 
     return H;
 }
@@ -251,14 +252,39 @@ void save_image(dImage image, char* filename){
 	status = H5Fclose (file_id);
 }
 
+Image open_image(char* filename){
+	Image out;
+	hid_t file, space, dset;
+	hsize_t dims[3];
+    file = H5Fopen (filename, H5F_ACC_RDONLY, H5P_DEFAULT);
+    dset = H5Dopen (file, "dset");
+
+	space = H5Dget_space(dset);    /* dataspace identifier */
+	H5Sget_simple_extent_dims(space, dims, NULL);
+	printf("%d %d %d", dims[0], dims[1], dims[2]);
+
+	out.dz = dims[0];
+	out.dy = dims[1];
+	out.dx = dims[2];
+	out.data = (unsigned char *)malloc(out.dx*out.dy*out.dz*sizeof(unsigned char));
+
+	H5Dread(dset, H5T_NATIVE_UCHAR, H5S_ALL, H5S_ALL, H5P_DEFAULT, out.data);
+
+	return out;
+}
+
 int main(int argc, const char *argv[])
 {
 	int r, size;
-	char* filename = argv[3];
-	size = atoi(argv[1]);
-	r = atoi(argv[2]);
-	Image ball = build_ball(size, r);
-	dImage smoothed = smooth(ball, 50);
+	/*char* filename = argv[3];*/
+	/*size = atoi(argv[1]);*/
+	/*r = atoi(argv[2]);*/
+	Image test;
+	char* filename = argv[1];
+	char* output = argv[2];
+	test = open_image(filename);
+	/*Image ball = build_ball(size, r);*/
+	dImage smoothed = smooth(test, 500);
 	/*print_slice(ball, size/2);*/
 	/*print_slice(A1, 25);*/
 	/*printf("\n");*/
@@ -270,6 +296,6 @@ int main(int argc, const char *argv[])
 	/*printf("\n");*/
 	/*print_slice(Band, 25);*/
 	/*printf("\n");*/
-	save_image(smoothed, filename);
+	save_image(smoothed, output);
 	return 0;
 }
