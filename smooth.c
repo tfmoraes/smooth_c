@@ -17,7 +17,7 @@ typedef struct image {
 typedef struct d_image {
 	double *data;
 	int dx, dy, dz;
-} dImage;
+} Image_d;
 
 Image build_ball(int s, int r){
 	int i, j, k, X, Y, Z, c;
@@ -121,7 +121,7 @@ Image sum_bands(int n, ...){
 	return out;
 }
 
-double calculate_H(dImage I, int z, int y, int x){
+double calculate_H(Image_d I, int z, int y, int x){
     double fx, fy, fz, fxx, fyy, fzz, fxy, fxz, fyz, H;
     int h, k, l;
 
@@ -165,7 +165,7 @@ double calculate_H(dImage I, int z, int y, int x){
     return H;
 }
 
-void replicate(dImage source, dImage dest){
+void replicate(Image_d source, Image_d dest){
 	int x, y, z;
 	for(z=0; z < source.dz; z++)
 		for(y=0; y < source.dy; y++)
@@ -173,20 +173,20 @@ void replicate(dImage source, dImage dest){
 				G(dest, z, y, x) = G(source, z, y, x);
 }
 
-dImage smooth(Image image, int n){
+Image_d smooth(Image image, int n){
 	int i, x, y, z, S;
 	double H, diff=0, dt=1/6.0, v, cn;
-	dImage out, aux;
+	Image_d out, aux;
 
 	Image A1 = perim(image);
 	Image A2 = perim(A1);
-	Image A3 = perim(A2);
-	Image A4 = perim(A3);
-	Image Band = sum_bands(4, A1, A2, A3, A4);
+	/*Image A3 = perim(A2);*/
+	/*Image A4 = perim(A3);*/
+	Image Band = sum_bands(2, A1, A2);
 	free(A1.data);
 	free(A2.data);
-	free(A3.data);
-	free(A4.data);
+	/*free(A3.data);*/
+	/*free(A4.data);*/
 
 	out.data = (double *) malloc(image.dz*image.dy*image.dx*sizeof(double));
 	out.dz = image.dz;
@@ -201,7 +201,10 @@ dImage smooth(Image image, int n){
 	for(z=0; z < image.dz; z++){
 		for(y=0; y < out.dy; y++){
 			for(x=0; x < out.dx; x++){
-				G(out, z, y, x) = G(image, z, y, x);
+				if (G(image, z, y, x))
+					G(out, z, y, x) = 1;
+				else
+					G(out, z, y, x) = -1;
 				if (G(Band, z, y, x))
 					S += 1;
 			}
@@ -218,9 +221,9 @@ dImage smooth(Image image, int n){
 						H = calculate_H(aux, z, y, x);
 						v = G(aux, z, y, x) + dt*H;
 						if(G(image, z, y, x)){
-							G(out, z, y, x) = v > 0.5 ? v: 0.5;
+							G(out, z, y, x) = v > 0 ? v: 0;
 						} else {
-							G(out, z, y, x) = v < 0.5 ? v: 0.5;
+							G(out, z, y, x) = v < 0 ? v: 0;
 						}
 						diff += (G(out, z, y, x) - G(aux, z, y, x))*(G(out, z, y, x) - G(aux, z, y, x));
 					}
@@ -236,7 +239,7 @@ dImage smooth(Image image, int n){
 }
 
 
-void save_image(dImage image, char* filename){
+void save_image(Image_d image, char* filename){
 	int RANK=3;
 	hid_t       file_id;
 	hsize_t     dims[3]={image.dz, image.dy, image.dx};
@@ -284,7 +287,7 @@ int main(int argc, const char *argv[])
 	char* output = argv[2];
 	test = open_image(filename);
 	/*Image ball = build_ball(size, r);*/
-	dImage smoothed = smooth(test, 500);
+	Image_d smoothed = smooth(test, 500);
 	/*print_slice(ball, size/2);*/
 	/*print_slice(A1, 25);*/
 	/*printf("\n");*/
