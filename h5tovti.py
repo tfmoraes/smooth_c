@@ -42,7 +42,7 @@ def main():
     try:
         spacing = [float(i) for i in sys.argv[3:]]
     except:
-        spacing = 0.0, 0.0, 0.0
+        spacing = 1.0, 1.0, 1.0
 
     m_image = h5py.File(m_input, 'r')
     data = np.array(m_image['dset'])

@@ -260,7 +260,7 @@ Image open_image(char* filename){
 	hid_t file, space, dset;
 	hsize_t dims[3];
     file = H5Fopen (filename, H5F_ACC_RDONLY, H5P_DEFAULT);
-    dset = H5Dopen (file, "dset");
+    dset = H5Dopen (file, "dset", H5P_DEFAULT);
 
 	space = H5Dget_space(dset);    /* dataspace identifier */
 	H5Sget_simple_extent_dims(space, dims, NULL);
