@@ -11,11 +11,13 @@
 
 typedef struct image {
 	unsigned char *data;
+    float *spacing;
 	int dx, dy, dz;
 } Image;
 
 typedef struct d_image {
 	double *data;
+    float *spacing;
 	int dx, dy, dz;
 } Image_d;
 
@@ -196,6 +198,9 @@ Image_d smooth(Image image, int n){
 	aux.dz = image.dz;
 	aux.dy = image.dy;
 	aux.dx = image.dx;
+    
+    out.spacing = (float *) malloc(3*sizeof(float));
+    memcpy(out.spacing, image.spacing, sizeof(float)*3);
 
 	S = 0;
 	for(z=0; z < image.dz; z++){
@@ -241,8 +246,10 @@ Image_d smooth(Image image, int n){
 
 void save_image(Image_d image, char* filename){
 	int RANK=3;
+    int SRANK=1;
 	hid_t       file_id;
 	hsize_t     dims[3]={image.dz, image.dy, image.dx};
+    hsize_t     dims_spacing[1] = {3};
 	herr_t      status;
 
 	/* create a HDF5 file */
@@ -250,6 +257,7 @@ void save_image(Image_d image, char* filename){
 
 	/* create and write an integer type dataset named "dset" */
 	status = H5LTmake_dataset(file_id,"/dset",RANK,dims,H5T_NATIVE_DOUBLE, image.data);
+	status = H5LTmake_dataset(file_id,"/spacing",SRANK,dims_spacing,H5T_NATIVE_FLOAT, image.spacing);
 
 	/* close file */
 	status = H5Fclose (file_id);
@@ -257,11 +265,13 @@ void save_image(Image_d image, char* filename){
 
 Image open_image(char* filename){
 	Image out;
-	hid_t file, space, dset;
+	hid_t file, space, dset, spacing;
 	hsize_t dims[3];
-    file = H5Fopen (filename, H5F_ACC_RDONLY, H5P_DEFAULT);
-    dset = H5Dopen (file, "dset", H5P_DEFAULT);
+	file = H5Fopen (filename, H5F_ACC_RDONLY, H5P_DEFAULT);
+	dset = H5Dopen (file, "dset", H5P_DEFAULT);
+	spacing = H5Dopen (file, "spacing", H5P_DEFAULT);
 
+    /* Reading dset*/
 	space = H5Dget_space(dset);    /* dataspace identifier */
 	H5Sget_simple_extent_dims(space, dims, NULL);
 	printf("%d %d %d", dims[0], dims[1], dims[2]);
@@ -272,6 +282,11 @@ Image open_image(char* filename){
 	out.data = (unsigned char *)malloc(out.dx*out.dy*out.dz*sizeof(unsigned char));
 
 	H5Dread(dset, H5T_NATIVE_UCHAR, H5S_ALL, H5S_ALL, H5P_DEFAULT, out.data);
+
+    /* reading spacing */
+    space = H5Dget_space(spacing);
+	out.spacing = (float *)malloc(3*sizeof(float));
+	H5Dread(spacing, H5T_NATIVE_FLOAT , H5S_ALL, H5S_ALL, H5P_DEFAULT, out.spacing);
 
 	return out;
 }

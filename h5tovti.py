@@ -39,13 +39,10 @@ def main():
     m_input = sys.argv[1]
     v_output = sys.argv[2]
 
-    try:
-        spacing = [float(i) for i in sys.argv[3:]]
-    except:
-        spacing = 1.0, 1.0, 1.0
-
     m_image = h5py.File(m_input, 'r')
-    data = np.array(m_image['dset'])
+    data = m_image['dset'].value * 255
+    spacing = m_image['spacing'].value
+    print spacing;
     dz, dy, dx = data.shape
     v_image = to_vtk(data.reshape(dz*dy*dx), data.shape, spacing)
     save_to_vti(v_image, v_output)
