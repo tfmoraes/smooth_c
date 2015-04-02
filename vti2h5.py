@@ -19,9 +19,9 @@ def to_h5(fname, outname):
 
     mh5 = h5py.File(outname, 'w')
     mh5.create_dataset('spacing', data=o.GetSpacing());
-    mh5.create_dataset('dset', shape=[i+10 for i in m.shape], dtype=m.dtype)
+    mh5.create_dataset('dset', shape=m.shape, dtype=m.dtype)
     d = mh5['dset']
-    d[5:-5, 5:-5, 5:-5] = m
+    d[:] = m
     mh5.flush()
     mh5.close()
 

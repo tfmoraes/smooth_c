@@ -7,7 +7,14 @@
 #include "hdf5_hl.h"
 
 #define E 0.001
-#define G(I, z, y, x) *(I.data + (z)*I.dy*I.dx + (y)*I.dx + x)
+
+#define INSIDE(I, z, y, x) (x >= 0 && x < I.dx && y >= 0 && y < I.dy && z >= 0 && z < I.dz)
+
+#define G(I, z, y, x)\
+    *(I.data + (z)*I.dy*I.dx + (y)*I.dx + x) 
+
+#define GS(I, z, y, x) \
+    ((INSIDE(I, z, y, x)) ? *(I.data + (z)*I.dy*I.dx + (y)*I.dx + x) : 0.0)
 
 typedef struct image {
 	unsigned char *data;
@@ -131,28 +138,28 @@ double calculate_H(Image_d I, int z, int y, int x){
     k = 1;
     l = 1;
 
-    fx = (G(I, z, y, x + h) - G(I, z, y, x - h)) / (2.0*h);
+    fx = (GS(I, z, y, x + h) - GS(I, z, y, x - h)) / (2.0*h);
 
-    fy = (G(I, z, y + k, x) - G(I, z, y - k, x)) / (2.0*k);
+    fy = (GS(I, z, y + k, x) - GS(I, z, y - k, x)) / (2.0*k);
 
-    fz = (G(I, z + l, y, x) - G(I, z - l, y, x)) / (2.0*l);
+    fz = (GS(I, z + l, y, x) - GS(I, z - l, y, x)) / (2.0*l);
 
-    fxx = (G(I, z, y, x + h) - 2*G(I, z, y, x) + G(I, z, y, x - h)) / (h*h);
+    fxx = (GS(I, z, y, x + h) - 2*GS(I, z, y, x) + GS(I, z, y, x - h)) / (h*h);
 
-    fyy = (G(I, z, y + k, x) - 2*G(I, z, y, x) + G(I, z, y - k, x)) / (k*k);
+    fyy = (GS(I, z, y + k, x) - 2*GS(I, z, y, x) + GS(I, z, y - k, x)) / (k*k);
 
-    fzz = (G(I, z + l, y, x) - 2*G(I, z, y, x) + G(I, z - l, y, x)) / (l*l);
+    fzz = (GS(I, z + l, y, x) - 2*GS(I, z, y, x) + GS(I, z - l, y, x)) / (l*l);
 
-    fxy = (G(I, z, y + k, x + h) - G(I, z, y - k, x + h) \
-            - G(I, z, y + k, x - h) + G(I, z, y - k, x - h)) \
+    fxy = (GS(I, z, y + k, x + h) - GS(I, z, y - k, x + h) \
+            - GS(I, z, y + k, x - h) + GS(I, z, y - k, x - h)) \
             / (4.0*h*k);
 
-    fxz = (G(I, z + l, y, x + h) - G(I, z + l, y, x - h) \
-            - G(I, z - l, y, x + h) + G(I, z - l, y, x - h)) \
+    fxz = (GS(I, z + l, y, x + h) - GS(I, z + l, y, x - h) \
+            - GS(I, z - l, y, x + h) + GS(I, z - l, y, x - h)) \
             / (4.0*h*l);
 
-    fyz = (G(I, z + l, y + k, x) - G(I, z + l, y - k, x) \
-            - G(I, z - l, y + k, x) + G(I, z - l, y - k, x)) \
+    fyz = (GS(I, z + l, y + k, x) - GS(I, z + l, y - k, x) \
+            - GS(I, z - l, y + k, x) + GS(I, z - l, y - k, x)) \
             / (4.0*k*l);
 
     if (fx*fx + fy*fy + fz*fz > 0)
