@@ -1,12 +1,24 @@
-.PHONY: all debug clean
+TARGET = test
+LIBS = -lm -lhdf5_hl -lhdf5 -lz
+CC = gcc
+CFLAGS = -g -Wall -I/usr/include/mpi
 
-all: smooth
+.PHONY: default all clean
 
-debug: smooth.c
-	gcc smooth.c -I/usr/include/mpi -lhdf5_hl -lhdf5 -lz -lm -g -o smooth
+default: $(TARGET)
+all: default
+
+OBJECTS = $(patsubst %.c, %.o, $(wildcard *.c))
+HEADERS = $(wildcard *.h)
+
+%.o: %.c $(HEADERS)
+	$(CC) $(CFLAGS) -c $< -o $@
+
+.PRECIOUS: $(TARGET) $(OBJECTS)
+
+$(TARGET): $(OBJECTS)
+	$(CC) $(OBJECTS) -Wall $(LIBS) -o $@
 
 clean:
-	rm -rf smooth
-
-smooth: smooth.c
-	gcc smooth.c -I/usr/include/mpi -lhdf5_hl -lhdf5 -lz -lm -o smooth
+	-rm -f *.o
+	-rm -f $(TARGET)
