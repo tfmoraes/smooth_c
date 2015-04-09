@@ -17,7 +17,7 @@ def vti_to_nparray(fname):
     
     m = numpy_support.vtk_to_numpy(o.GetPointData().GetScalars())
     m.shape = (z, y, x)
-    m[m>0] = 1
+    m[:] = (m > 127) * 1
     
     return m, o.GetSpacing()
 
@@ -25,6 +25,7 @@ def vti_to_nparray(fname):
 def to_vtk(n_array, dim, spacing=(1,1,1)):
     dz, dy, dx = dim
     data_type = n_array.dtype
+    n_array.shape = dz*dy*dx
 
     v_image = numpy_support.numpy_to_vtk(n_array)
 
@@ -40,6 +41,8 @@ def to_vtk(n_array, dim, spacing=(1,1,1)):
     image.AllocateScalars()
     image.GetPointData().SetScalars(v_image)
 
+    n_array.shape = dz,dy,dx
+
     return image
 
 
@@ -54,11 +57,9 @@ def save_to_vti(imagedata, file_output):
 
 def main():
     img, spacing = vti_to_nparray(sys.argv[1])
-    out_img = smooth.smoothpy(img, 10)
+    out_img = smooth.smoothpy(np.array(img[1:, 1:, 1:]), int(sys.argv[3]))
     vtk_img = to_vtk(out_img, out_img.shape, spacing)
     save_to_vti(vtk_img, sys.argv[2])
 
 if __name__ == '__main__':
     main()
-
-a = np.zeros((10,10,10), dtype='uint8')
