@@ -17,17 +17,21 @@ cdef data_to_numpy_array_with_spec(void * ptr, np.npy_intp* N, int t):
 
 cdef extern struct Image:
     unsigned char *data
-    float *spacing
     int dx
     int dy
     int dz
+    float sx
+    float sy
+    float sz
 
 cdef extern struct Image_d:
     double *data
-    float *spacing
     int dx
     int dy
     int dz
+    float sx
+    float sy
+    float sz
 
 
 cdef extern Image_d smooth(Image, int)
@@ -41,8 +45,6 @@ def smoothpy(np.ndarray[DTYPE_t, ndim=3] image not None, int n):
     img.dz = image.shape[0]
     img.dy = image.shape[1]
     img.dx = image.shape[2]
-
-    print img.dz, img.dy, img.dx
 
     cdef Image_d out = smooth(img, n)
 

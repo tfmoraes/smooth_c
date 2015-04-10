@@ -145,8 +145,9 @@ Image_d smooth(Image image, int n){
 	aux.dy = image.dy;
 	aux.dx = image.dx;
     
-    out.spacing = (float *) malloc(3*sizeof(float));
-    memcpy(out.spacing, image.spacing, sizeof(float)*3);
+    out.sx = image.sx;
+    out.sy = image.sy;
+    out.sz = image.sz;
 
 	S = 0;
 	for(z=0; z < image.dz; z++){
