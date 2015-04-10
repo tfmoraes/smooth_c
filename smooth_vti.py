@@ -3,7 +3,6 @@ import smooth
 
 import sys
 import vtk
-import h5py
 
 from vtk.util import numpy_support
 
@@ -17,7 +16,7 @@ def vti_to_nparray(fname):
     
     m = numpy_support.vtk_to_numpy(o.GetPointData().GetScalars())
     m.shape = (z, y, x)
-    m[:] = (m > 127) * 1
+    #m[:] = (m > 127) * 1
     
     return m, o.GetSpacing()
 
