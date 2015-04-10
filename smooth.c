@@ -128,17 +128,13 @@ Image_d smooth(Image image, int n){
 
 	Image A1 = perim(image);
 	Image A2 = perim(A1);
-    Image A3 = perim(A2);
-    Image A4 = perim(A3);
-    Image A5 = perim(A4);
-    Image A6 = perim(A5);
-	Image Band = sum_bands(2, A1, A2, A3, A4, A5, A6);
+	Image A3 = perim(A2);
+	Image A4 = perim(A3);
+	Image Band = sum_bands(4, A1, A2, A3, A4);
 	free(A1.data);
 	free(A2.data);
-    free(A3.data);
-    free(A4.data);
-    free(A5.data);
-    free(A6.data);
+	free(A3.data);
+	free(A4.data);
 
 	out.data = (double *) malloc(image.dz*image.dy*image.dx*sizeof(double));
 	out.dz = image.dz;
