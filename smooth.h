@@ -19,12 +19,14 @@ typedef struct image {
 	unsigned char *data;
 	int dx, dy, dz;
     float sx, sy, sz;
+    float *spacing;
 } Image;
 
 typedef struct d_image {
 	double *data;
 	int dx, dy, dz;
     float sx, sy, sz;
+    float *spacing;
 } Image_d;
 
 

@@ -40,7 +40,7 @@ def main():
     v_output = sys.argv[2]
 
     m_image = h5py.File(m_input, 'r')
-    data = m_image['dset'].value * 255
+    data = m_image['data'].value * 255
     spacing = m_image['spacing'].value
     print spacing;
     dz, dy, dx = data.shape

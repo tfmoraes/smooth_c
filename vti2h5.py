@@ -14,13 +14,13 @@ def to_h5(fname, outname):
     
     m = numpy_support.vtk_to_numpy(o.GetPointData().GetScalars())
     m.shape = (z, y, x)
-    m[m>0] = 1
+    #  m[m>0] = 1
     print m.dtype, m.shape
 
     mh5 = h5py.File(outname, 'w')
     mh5.create_dataset('spacing', data=o.GetSpacing());
-    mh5.create_dataset('dset', shape=m.shape, dtype=m.dtype)
-    d = mh5['dset']
+    mh5.create_dataset('data', shape=m.shape, dtype=m.dtype)
+    d = mh5['data']
     d[:] = m
     mh5.flush()
     mh5.close()

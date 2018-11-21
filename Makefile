@@ -1,7 +1,7 @@
 TARGET = test
 LIBS = -lm -lhdf5_hl -lhdf5 -lz
 CC = gcc
-CFLAGS = -g -Wall -I/usr/include/mpi
+CFLAGS = -g -Wall -I/usr/include/hdf5/openmpi -I/usr/include/mpi
 
 .PHONY: default all clean
 
